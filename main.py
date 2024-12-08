@@ -39,29 +39,72 @@ class Rules:
         return cls(distinct_objects, ruleset_dict)
 
 
-class HumanPlayer:
-    def __init__(self, name: str = "Mensch"):
+class Player:
+    def __init__(self, name: str = "Unknown") -> None:
+        """Basisklasse für Spieler:innen
+
+        Args:
+            name (str, optional): Name. Defaults to "Unknown".
+        """
+        self.score: int = 0
         self.name: str = name
 
-    def play(self, objects):
-        chosen_object = input(
-            f"\n{'-'*80}\nWähle einen Gegenstand:\t{', '.join(objects)}\n"
+    def increment_score(self, increment: int = 1) -> None:
+        self.score += increment
+
+    def get_score(self) -> int:
+        return self.score
+
+    def play(self, *args):
+        raise NotImplementedError
+
+    def __repr__(self) -> str:
+        return self.name
+
+    def __call__(self, objects) -> str:
+        return self.play(objects)
+
+
+class HumanPlayer(Player):
+    def __init__(self, name: str = "Mensch") -> None:
+        """Ein Mensch, welcher Eingaben tätigen muss
+
+        Args:
+            name (str, optional): Name. Defaults to "Mensch".
+        """
+        super().__init__(name)
+
+    def play(self, objects: list[str]) -> str:
+        object_list: str = ", ".join(
+            [f"{obj} [{idx}]" for idx, obj in enumerate(objects)]
         )
+        chosen_object: str = input(f"Wähle einen Gegenstand:\t{object_list}\n")
         if chosen_object in objects:
-            print(f"Du hast {chosen_object} gewählt.")
+            print(f"{self.name} hat {chosen_object} gewählt.")
             return chosen_object
+        elif chosen_object.isdigit() and 0 <= (idx := int(chosen_object)) < len(
+            objects
+        ):
+            return objects[idx]
+        elif chosen_object == "exit":
+            exit()
         else:
             print("Diesen Gegenstand gibt es nicht!")
             return self.play(objects)
 
 
-class ComputerPlayer:
-    def __init__(self, name: str = "Computer"):
-        self.name: str = name
+class ComputerPlayer(Player):
+    def __init__(self, name: str = "Computer") -> None:
+        """Ein Computer, welcher "zufällig" spielt
 
-    def play(self, objects):
-        chosen_object = choice(objects)
-        print(f"Der Computer hat {chosen_object} gewählt.")
+        Args:
+            name (str, optional): Name. Defaults to "Computer".
+        """
+        super().__init__(name)
+
+    def play(self, objects: list[str]) -> str:
+        chosen_object: str = choice(objects)
+        print(f"{self.name} hat {chosen_object} gewählt.")
         return chosen_object
 
 
