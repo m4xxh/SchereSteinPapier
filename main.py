@@ -134,6 +134,30 @@ class Game:
             )
         )
 
+def win_condition_best_out_of(
+    number: int, score_player1: int, score_player2: int
+) -> tuple[bool, bool]:
+    """Win Condtion"""
+    win_condition: int = number // 2
+    return (score_player1 > win_condition, score_player2 > win_condition)
+
+
+def win_condition_number_wins(
+    number: int, score_player1: int, score_player2: int
+) -> tuple[bool, bool]:
+    return (score_player1 > number, score_player2 > number)
+
+
+def win_condition_number_games(
+    number: int, score_player1: int, score_player2: int
+) -> tuple[bool, bool]:
+    score_sum: int = score_player1 + score_player2
+    game_ends: bool = score_sum >= number
+    score_winning: int = max(score_player1, score_player2)
+    return (
+        game_ends and (score_player1 == score_winning),
+        game_ends and (score_player2 == score_winning),
+    )
 
 def main():
     pass
