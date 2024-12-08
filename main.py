@@ -37,13 +37,47 @@ class Rules:
 
 
 class HumanPlayer:
-    def __init__(self):
-        pass
+    def __init__(self, name: str = "Mensch"):
+        self.name: str = name
+
+    def play(self, objects):
+        chosen_object = input(
+            f"\n{'-'*80}\nWähle einen Gegenstand:\t{', '.join(objects)}\n"
+        )
+        if chosen_object in objects:
+            print(f"Du hast {chosen_object} gewählt.")
+            return chosen_object
+        else:
+            print("Diesen Gegenstand gibt es nicht!")
+            return self.play(objects)
 
 
 class ComputerPlayer:
-    def __init__(self):
-        pass
+    def __init__(self, name: str = "Computer"):
+        self.name: str = name
+
+    def play(self, objects):
+        chosen_object = choice(objects)
+        print(f"Der Computer hat {chosen_object} gewählt.")
+        return chosen_object
+
+
+class Player:
+    def __init__(self, playerType: HumanPlayer | ComputerPlayer) -> None:
+        self.score: int = 0
+        self.playerType = playerType
+
+    def increment_score(self) -> None:
+        self.score += 1
+
+    def get_score(self) -> int:
+        return self.score
+
+    def __repr__(self):
+        return self.playerType.name
+
+    def __call__(self, objects, *args, **kwds):
+        return self.playerType.play(objects=objects)
 
 
 class Game:
