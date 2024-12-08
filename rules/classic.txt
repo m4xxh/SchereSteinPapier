@@ -1,0 +1,3 @@
+Schere schneidet Papier,
+Papier umwickelt Stein,
+Stein schlägt Schere,

@@ -1,0 +1,10 @@
+Schere schneidet Papier, 
+Papier umwickelt Stein, 
+Stein zerquetscht Echse, 
+Echse vergiftet Spock, 
+Spock zertrümmert Schere, 
+Schere köpft Echse, 
+Echse frisst Papier, 
+Papier widerlegt Spock, 
+Spock verdampft Stein, 
+Stein schlägt Schere
