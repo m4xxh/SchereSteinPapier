@@ -1,10 +1,10 @@
 import argparse
 import re
 import os
-from collections.abc import Collection
+from collections.abc import Callable, Collection
 from random import choice
-
 from functools import partial
+from typing import Self
 
 
 class Rules:
@@ -12,16 +12,32 @@ class Rules:
         self,
         distinct_objects: Collection[str],
         ruleset: dict[tuple[str, str], str],
-    ):
+    ) -> None:
+        """Definiert die Regeln, welche das Spiel befolgen soll
+
+        Args:
+            distinct_objects (Collection[str]): Spileobjekte,
+                z.B. Schere, Stein, oder Papier
+            ruleset (dict[tuple[str, str], str]): Die Regeln, welche beschreiben
+                welches Objekt welches schlägt
+        """
         num_objects: int = len(distinct_objects)
         assert (num_objects - 1) * num_objects / 2 == len(
             ruleset
-        ), "Not enough rules to cover object relations"
+        ), "Nicht genug Regeln, um alle Objektbeziehungen abzudecken"
         self.distinct_objects: Collection = distinct_objects
         self.ruleset: dict[tuple[str, str], str] = ruleset
 
     @classmethod
-    def parse(cls, path: str | os.PathLike):
+    def parse(cls, path: str | os.PathLike) -> Self:
+        """Liest eine Regeldatei und erstellt das Regelobjekt zum spielen
+
+        Args:
+            path (str | os.PathLike): Dateipfad der Regeln
+
+        Returns:
+            Self: Ein Regelobjekt
+        """
         with open(path, "r") as file:
             rules: list[str] = file.read().splitlines()
         ruleset: list[tuple[str, str, str]] = [
@@ -108,48 +124,54 @@ class ComputerPlayer(Player):
         return chosen_object
 
 
-class Player:
-    def __init__(self, playerType: HumanPlayer | ComputerPlayer) -> None:
-        self.score: int = 0
-        self.playerType = playerType
-
-    def increment_score(self) -> None:
-        self.score += 1
-
-    def get_score(self) -> int:
-        return self.score
-
-    def __repr__(self):
-        return self.playerType.name
-
-    def __call__(self, objects, *args, **kwds):
-        return self.playerType.play(objects=objects)
-
-
 class Game:
     def __init__(
-        self, player1: Player, player2: Player, rules: Rules, winningCondition
-    ):
-        self.player1 = player1
-        self.player2 = player2
-        self.rules = rules
-        self.winningCondition = winningCondition
+        self,
+        player1: Player,
+        player2: Player,
+        rules: Rules,
+        winningCondition: Callable[[int, int], tuple[bool, bool]],
+    ) -> None:
+        """Ein Spiel zwischen zwei Spielenden
 
-    def print_scores(self):
+        Args:
+            player1 (Player): Person 1 (Mensch/Computer)
+            player2 (Player): Person 2 (Mensch/Computer)
+            rules (Rules): Regelwerk
+            winningCondition (Callable[[int, int], tuple[bool, bool]]): Funktion
+                welche Gewinnbedingung prüft
+        """
+        self.player1: Player = player1
+        self.player2: Player = player2
+        self.rules: Rules = rules
+        self.winningCondition: Callable[[int, int], tuple[bool, bool]] = (
+            winningCondition
+        )
+        self.gameround: int = 1
+
+    def print_scores(self) -> None:
         print(
-            f"{self.player1}: {self.player1.get_score()} - {self.player2.get_score()} :{self.player2}"
+            f"{self.player1}: {self.player1.get_score()}"
+            + " - "
+            + f"{self.player2.get_score()} :{self.player2}"
         )
 
-    def scored(self, objects: tuple[str, str], player: Player):
+    def scored(self, objects: tuple[str, str], player: Player) -> None:
+        """Verteilt Punkte"""
         print(f"\n{objects[0]} {self.rules.ruleset.get(objects)} {objects[1]}")
         print(f"{player} erhält einen Punkt")
         player.increment_score()
         self.print_scores()
 
-    def play(self):
+    def play(self) -> None:
+        """Spielabwicklung"""
         while not self.checkWinningCondition():
-            player1_object: str = self.player1(self.rules.distinct_objects)
-            player2_object: str = self.player2(self.rules.distinct_objects)
+            print(f"{'-'*80}")
+            print(f"Runde {self.gameround}")
+            print(f"{self.player1} ist dran")
+            player1_object: str = self.player1.play(self.rules.distinct_objects)
+            print(f"{self.player2} ist dran")
+            player2_object: str = self.player2.play(self.rules.distinct_objects)
             if (
                 objects := (player1_object, player2_object)
             ) in self.rules.ruleset:
@@ -160,10 +182,12 @@ class Game:
                 self.scored(objects, self.player2)
             else:
                 print("\nUnentschieden!\nNiemand bekommt Punkte\n")
+            self.gameround += 1
         self.announce_winner()
 
-    def announce_winner(self):
-        winner = self.winningCondition(
+    def announce_winner(self) -> None:
+        """Bekanntgabe wer gewonnen hat"""
+        winner: tuple[bool, bool] = self.winningCondition(
             self.player1.get_score(), self.player2.get_score()
         )
         if all(winner):
@@ -174,6 +198,7 @@ class Game:
             )
 
     def checkWinningCondition(self) -> bool:
+        """Überprüfung, ob schon jemand gewonnen hat"""
         return any(
             self.winningCondition(
                 self.player1.get_score(), self.player2.get_score()
@@ -184,7 +209,9 @@ class Game:
 def win_condition_best_out_of(
     number: int, score_player1: int, score_player2: int
 ) -> tuple[bool, bool]:
-    """Win Condtion"""
+    """Best-out-of-x Modell:
+    Wer über die Hälfte der Punkte macht hat gewonnen
+    """
     win_condition: int = number // 2
     return (score_player1 > win_condition, score_player2 > win_condition)
 
@@ -192,12 +219,14 @@ def win_condition_best_out_of(
 def win_condition_number_wins(
     number: int, score_player1: int, score_player2: int
 ) -> tuple[bool, bool]:
+    """Wer eine bestimmte Anzahl an Rundengewinnen hat gewinnt das Spiel"""
     return (score_player1 > number, score_player2 > number)
 
 
 def win_condition_number_games(
     number: int, score_player1: int, score_player2: int
 ) -> tuple[bool, bool]:
+    """Eine bestimmte Anzahl an Spielen wird gespielt (Unentschieden möglich)"""
     score_sum: int = score_player1 + score_player2
     game_ends: bool = score_sum >= number
     score_winning: int = max(score_player1, score_player2)
