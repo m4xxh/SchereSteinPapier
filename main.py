@@ -207,17 +207,59 @@ def win_condition_number_games(
     )
 
 
-def main():
-    game = Game(
-        Player(HumanPlayer()),
-        Player(ComputerPlayer()),
-        Rules.parse(
-            "./rules/extended.txt",
-        ),
-        partial(win_condition_best_out_of, 3),
+def main(args: argparse.Namespace) -> None:
+    rules: Rules = Rules.parse(
+        args.rules
+        if args.rules
+        else ["./rules/classic.txt", "./rules/extended.txt"][args.extended]
     )
+    if args.bestoutof:
+        wincondition = partial(win_condition_best_out_of, args.bestoutof)
+    elif args.numgames:
+        wincondition = partial(win_condition_number_games, args.numgames)
+    elif args.numberofwins:
+        wincondition = partial(win_condition_number_wins, args.numberofwins)
+    else:
+        raise NotImplemented
+    game = Game(HumanPlayer(), ComputerPlayer(), rules, wincondition)
     game.play()
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Schere, Stein, Papier (& Erweiterungen)"
+    )
+
+    # Mutually exclusive group for extended/rules
+    ruleset_group: argparse._MutuallyExclusiveGroup = (
+        parser.add_mutually_exclusive_group()
+    )
+    ruleset_group.add_argument(
+        "--extended",
+        action="store_true",
+        help="Erweiterte Regeln mit Spock und Echse.",
+    )
+    ruleset_group.add_argument(
+        "--rules", type=str, help="Dateipfad für eigen erstellte Regeln."
+    )
+
+    # Mutually exclusive group for game parameters
+    wincondition_group: argparse._MutuallyExclusiveGroup = (
+        parser.add_mutually_exclusive_group(required=False)
+    )
+    wincondition_group.add_argument(
+        "--bestoutof",
+        type=int,
+        default=3,
+        help="Gewinnkondition: Mehrzahl der BESTOUTOF Spiele gewonnen (Standard=3).",
+    )
+    wincondition_group.add_argument(
+        "--numgames", type=int, help="Das Spiel hört nach NUMGAMES Spielen auf."
+    )
+    wincondition_group.add_argument(
+        "--numberofwins",
+        type=int,
+        help="Das Spiel hört nach NUMBEROFWINS Gewinnen auf.",
+    )
+    args: argparse.Namespace = parser.parse_args()
+    main(args)
