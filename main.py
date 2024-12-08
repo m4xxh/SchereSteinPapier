@@ -2,6 +2,9 @@ import argparse
 import re
 import os
 from collections.abc import Collection
+from random import choice
+
+from functools import partial
 
 
 class Rules:
@@ -134,6 +137,7 @@ class Game:
             )
         )
 
+
 def win_condition_best_out_of(
     number: int, score_player1: int, score_player2: int
 ) -> tuple[bool, bool]:
@@ -159,8 +163,17 @@ def win_condition_number_games(
         game_ends and (score_player2 == score_winning),
     )
 
+
 def main():
-    pass
+    game = Game(
+        Player(HumanPlayer()),
+        Player(ComputerPlayer()),
+        Rules.parse(
+            "./rules/extended.txt",
+        ),
+        partial(win_condition_best_out_of, 3),
+    )
+    game.play()
 
 
 if __name__ == "__main__":
