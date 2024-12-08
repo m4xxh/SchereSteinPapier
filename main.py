@@ -81,8 +81,58 @@ class Player:
 
 
 class Game:
-    def __init__(self):
-        pass
+    def __init__(
+        self, player1: Player, player2: Player, rules: Rules, winningCondition
+    ):
+        self.player1 = player1
+        self.player2 = player2
+        self.rules = rules
+        self.winningCondition = winningCondition
+
+    def print_scores(self):
+        print(
+            f"{self.player1}: {self.player1.get_score()} - {self.player2.get_score()} :{self.player2}"
+        )
+
+    def scored(self, objects: tuple[str, str], player: Player):
+        print(f"\n{objects[0]} {self.rules.ruleset.get(objects)} {objects[1]}")
+        print(f"{player} erhält einen Punkt")
+        player.increment_score()
+        self.print_scores()
+
+    def play(self):
+        while not self.checkWinningCondition():
+            player1_object: str = self.player1(self.rules.distinct_objects)
+            player2_object: str = self.player2(self.rules.distinct_objects)
+            if (
+                objects := (player1_object, player2_object)
+            ) in self.rules.ruleset:
+                self.scored(objects, self.player1)
+            elif (
+                objects := (player2_object, player1_object)
+            ) in self.rules.ruleset:
+                self.scored(objects, self.player2)
+            else:
+                print("\nUnentschieden!\nNiemand bekommt Punkte\n")
+        self.announce_winner()
+
+    def announce_winner(self):
+        winner = self.winningCondition(
+            self.player1.get_score(), self.player2.get_score()
+        )
+        if all(winner):
+            print("Beide haben gewonnen!")
+        else:
+            print(
+                f"{[self.player1, self.player2][winner.index(True)]} hat gewonnen"
+            )
+
+    def checkWinningCondition(self) -> bool:
+        return any(
+            self.winningCondition(
+                self.player1.get_score(), self.player2.get_score()
+            )
+        )
 
 
 def main():
