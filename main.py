@@ -240,7 +240,8 @@ def main(args: argparse.Namespace) -> None:
     rules: Rules = Rules.parse(
         args.rules
         if args.rules
-        else ["./rules/classic.txt", "./rules/extended.txt"][args.extended]
+        else os.path.dirname(__file__)
+        + ["/rules/classic.txt", "/rules/extended.txt"][args.extended]
     )
     if args.bestoutof:
         wincondition = partial(win_condition_best_out_of, args.bestoutof)
